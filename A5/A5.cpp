@@ -8,6 +8,8 @@ int main()
 {
 	std::string input;
 
+	Calculator calc;
+
 	while (std::getline(std::cin, input)) {
 		if (input == "exit" || input == "quit") {
 			break;
@@ -16,7 +18,7 @@ int main()
 		if (input.empty()) {
 			continue;
 		}
-		std::cout << "Echo: " << input << std::endl;
+		std::cout << "Echo: " << input << "\n" << calc.Process(input);
 	}
 	return 0;
 }

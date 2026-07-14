@@ -24,7 +24,7 @@ inline int divide1(std::vector<int> p) {
 }
 
 inline int pow1(std::vector<int> p) {
-	return std::pow(p[0], p[1]);
+	return (int)std::pow(p[0], p[1]);
 }
 
 inline int abs1(std::vector<int> p) {
