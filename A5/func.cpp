@@ -1,3 +1,4 @@
+#include <iostream> 
 #include <algorithm>
 #include <vector>
 #include <cmath>
@@ -20,6 +21,10 @@ inline int multiply1(std::vector<int> p) {
 	return p[0] * p[1];
 } 
 inline int divide1(std::vector<int> p) {
+	if (p[1] == 0) {
+		std::cout << "Zero division!\n";
+		return 0;
+	}
 	return p[0] / p[1];
 }
 

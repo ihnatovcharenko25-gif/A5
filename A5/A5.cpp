@@ -18,7 +18,7 @@ int main()
 		if (input.empty()) {
 			continue;
 		}
-		std::cout << "Echo: " << input << "\n" << calc.Process(input);
+		std::cout << "Result (or exitcode): " << calc.Process(input) << "\n";
 	}
 	return 0;
 }
