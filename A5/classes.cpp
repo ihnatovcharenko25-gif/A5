@@ -15,7 +15,7 @@
 class Parser {
 	static int charType(char c) {
 		if (isalpha(c)) return 1;
-		if (isdigit(c) || c == '{' || c == '}') return 2;
+		if (isdigit(c) || c == '{' || c == '}' || c == '.') return 2;
 		if (c == '(' || c == ')') return 3;
 		std::string operators = "+-*/";
 		if (operators.find(c) != std::string::npos) return 4;
@@ -163,7 +163,7 @@ class Calculator {
 		return (s == "*" || s == "/") ? 1 : 0;
 	}
 	bool IsNumber(const std::string& s) {
-		return !s.empty() && isdigit((unsigned char)s[0]);
+		return !s.empty() && ( isdigit((unsigned char)s[0]) || (s.length()>0 && isdigit(s[1])));
 	}
 	bool isFunction(const std::string& s) {
 		return customFunctions.contains(s) || predeclaredFunctions.contains(s);
