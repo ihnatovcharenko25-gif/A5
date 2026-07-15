@@ -9,52 +9,13 @@
 
 #include "func.cpp"
 
-class Function {
-protected:
-	int parameters;
-public:
-	virtual int Evaluate(const std::vector<int>& args) {
-		std::cout << "Non-specified function type";
-		return 0;
-	}
-	int ArgCount() {
-		return parameters;
-	}
-};
-class CustomFunction : public Function {
-	std::string value;
-public:
-	CustomFunction() {
-		parameters = 0;
-	}
-	CustomFunction(std::string f, int p) {
-		value = f;
-		parameters = p;
-	}
-	int Evaluate(const std::vector<int>& args) {
-		return -1;
-	}
-};
-class PredeclaredFunction : public Function {
-	std::function<int(const std::vector<int>& args)> value;
-public:
-	PredeclaredFunction() : value(nullptr) {
-		parameters = 0;
-	}
-	PredeclaredFunction(std::function<int(const std::vector<int>& args)> f, int p) {
-		value = f;
-		parameters = p;
-	}
-	int Evaluate(const std::vector<int>& args) {
-		return value(args);
-	}
-};
+
 
 
 class Parser {
 	static int charType(char c) {
 		if (isalpha(c)) return 1;
-		if (isdigit(c)) return 2;
+		if (isdigit(c) || c == '{' || c == '}') return 2;
 		if (c == '(' || c == ')') return 3;
 		std::string operators = "+-*/";
 		if (operators.find(c) != std::string::npos) return 4;
@@ -86,8 +47,8 @@ public:
 			}
 			if (currentToken.length() == 0 ||
 				(charType(currentToken[currentToken.length() - 1]) == charType(input[i]) &&
-				 charType(input[i]) != 3
-				) )
+					charType(input[i]) != 3
+					))
 				currentToken += input[i];
 			else {
 				result.push_back(currentToken);
@@ -99,6 +60,83 @@ public:
 		return result;
 	}
 };
+
+
+
+
+
+
+class Function {
+protected:
+	int parameters;
+public:
+	virtual int Evaluate(const std::vector<int>& args) {
+		std::cout << "Non-specified function type";
+		return 0;
+	}
+	int ArgCount() {
+		return parameters;
+	}
+};
+class CustomFunction : public Function {
+	std::vector<std::string> body;
+	std::function<int(const std::vector<std::string>&)> evaluator;
+public:
+	CustomFunction() {
+		parameters = 0;
+	}
+	CustomFunction(std::vector<std::string> bodyTokens, int p,
+		std::function<int(const std::vector<std::string>&)> eval) {
+		body = bodyTokens;
+		parameters = p;
+		evaluator = eval;
+	}
+	int Evaluate(const std::vector<int>& args) {
+		std::vector<std::string> substituted = body;
+		if (parameters != args.size()) {
+			std::cout << "Incorrect number of arguments!\n";
+			return 0;
+		}
+		for (auto& tok : substituted) {
+			if (tok.size() >= 3 && tok.front() == '{' && tok.back() == '}') {
+				int index = std::stoi(tok.substr(1, tok.size() - 2));
+				tok = std::to_string(args[index]);
+			}
+		}
+		return evaluator(substituted);
+	}
+};
+class PredeclaredFunction : public Function {
+	std::function<int(const std::vector<int>& args)> value;
+public:
+	PredeclaredFunction() : value(nullptr) {
+		parameters = 0;
+	}
+	PredeclaredFunction(std::function<int(const std::vector<int>& args)> f, int p) {
+		value = f;
+		parameters = p;
+	}
+	int Evaluate(const std::vector<int>& args) {
+		return value(args);
+	}
+};
+class IntegrateFunction : public Function {
+	std::function<int(const std::vector<int>& args)> value;
+public:
+	IntegrateFunction() : value(nullptr) {
+		parameters = 0;
+	}
+	IntegrateFunction(std::function<int(const std::vector<int>& args)> f, int p) {
+		value = f;
+		parameters = p;
+	}
+	int Evaluate(const std::vector<int>& args) {
+		return value(args);
+	}
+};
+
+
+
 
 
 
@@ -135,6 +173,7 @@ class Calculator {
 			return predeclaredFunctions[s].ArgCount();
 		if (customFunctions.contains(s)) 
 			return customFunctions[s].ArgCount();
+		if (s == "integral") return 3;
 		return -1;
 	}
 	int resolveVar(const std::string& s) {
@@ -142,6 +181,15 @@ class Calculator {
 			throw std::runtime_error("Undefined variable: " + s);
 		return variables[s];
 	}
+
+	/*long double Integrate(const std::string& f, const std::string& a, const std::string& b) {
+		int l = std::stoi(a);
+		int r = std::stoi(b);
+		long double result = 0.0;
+		for (float i = l; i + 0.01 <= r; i += 0.01) {
+			result += customFunctions[f].Evaluate({ i, i + 0.01 });
+		}
+	}*/
 	int callFn(const std::string& s, const std::vector<int>& args) {
 		if (predeclaredFunctions.contains(s))
 			return predeclaredFunctions[s].Evaluate(args);
@@ -170,9 +218,15 @@ public:
 		std::queue<std::string> output;
 		std::stack<std::string> ops;
 
+		std::string prevToken = "";
+
 		for (const std::string& token : tokens) {
+			if (token == "-" && (prevToken.empty() || prevToken == "(" || prevToken == "," || IsOperator(prevToken))) {
+				output.push("0");
+			}
 			if (token == ",") {
 				while (!ops.empty() && ops.top() != "(") { output.push(ops.top()); ops.pop(); }
+				prevToken = token;
 				continue;
 			}
 			if (token == "(") { ops.push(token); continue; }
@@ -181,10 +235,11 @@ public:
 				if (ops.empty()) throw std::runtime_error("No matching '('");
 				ops.pop();
 				if (!ops.empty() && isFunction(ops.top())) { output.push(ops.top()); ops.pop(); }
+				prevToken = token;
 				continue;
 			}
-			if (IsNumber(token)) { output.push(token); continue; }
-			if (isFunction(token)) { ops.push(token); continue; }
+			if (IsNumber(token)) { output.push(token); prevToken = token; continue; }
+			if (isFunction(token)) { ops.push(token); prevToken = token; continue; }
 			if (IsOperator(token)) {
 				while (!ops.empty() && ops.top() != "(" && !isFunction(ops.top()) &&
 					Priority(ops.top()) >= Priority(token))
@@ -193,9 +248,11 @@ public:
 					ops.pop();
 				}
 				ops.push(token);
+				prevToken = token;
 				continue;
 			}
 			output.push(token);
+			prevToken = token;
 		}
 		while (!ops.empty()) { output.push(ops.top()); ops.pop(); }
 		return output;
@@ -248,11 +305,12 @@ public:
 					v[i] = "{" + std::to_string(p) + "}";
 
 		std::cout << "Created def: ";
-		std::string result = "";
-		for (int i = b + 2; i < v.size(); i++) result += v[i];
-		std::cout << result << "\n";
-
-		return CustomFunction(result, parameters.size());
+		std::vector<std::string> result(v.begin() + b+2, v.end());
+		for (int i = b + 2; i < v.size(); i++) std::cout << v[i]; std::cout << "\n";
+		
+		//return CustomFunction(result, parameters.size());
+		return CustomFunction(result, parameters.size(),
+			[this](const std::vector<std::string>& toks) { return Calculate(toks); });
 	}
 
 	int Process(const std::string& input) {
@@ -276,6 +334,13 @@ public:
 				customFunctions[tokens[1]] = CreateFunction(subset);
 			}
 		}
+		/*else if (tokens[0] == "integrate") {
+			if (!customFunctions.contains(tokens[2])) {
+				std::cout << "Def " << tokens[2] << " doesn't exist!\n";
+				return 0;
+			}
+			Integrate(tokens[2], tokens[4], tokens[6]);
+		}*/
 		else {
 			return Calculate(tokens);
 		}
