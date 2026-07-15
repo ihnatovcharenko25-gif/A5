@@ -29,6 +29,10 @@ inline float divide1(std::vector<float> p) {
 }
 
 inline float pow1(std::vector<float> p) {
+	//if (p[0] < 0) {
+	//	std::cout << "Invalid pow parameter\n";
+	//	return 0;
+	//}
 	return std::pow(p[0], p[1]);
 }
 

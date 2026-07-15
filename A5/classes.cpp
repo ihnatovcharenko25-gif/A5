@@ -146,7 +146,7 @@ class Calculator {
 	std::map<std::string, CustomFunction> customFunctions;
 	std::map<std::string, PredeclaredFunction> predeclaredFunctions;
 	std::map<std::string, PredeclaredFunction> operators;
-	std::map<std::string, Function> functions;
+	//std::map<std::string, Function> functions;
 
 	std::map<std::string, float> variables;
 
@@ -185,11 +185,12 @@ class Calculator {
 	float Integrate(const std::string& f, const std::string& a, const std::string& b) {
 		float l = std::stof(a);
 		float r = std::stof(b);
+		float dif = (r - l) / 100;
 		float result = 0.0;
-		for (float i = l; i + 0.01f <= r; i += 0.01f) {
+		for (float i = l; i + dif <= r; i += dif) {
 			float yl = customFunctions[f].Evaluate({ i });
-			float yr = customFunctions[f].Evaluate({ i + 0.01f });
-			result += 0.01f * (yl + yr) / 2;
+			float yr = customFunctions[f].Evaluate({ i + dif });
+			result += dif * (yl + yr) / 2;
 		}
 		return result;
 	}
@@ -226,13 +227,14 @@ public:
 		for (const std::string& token : tokens) {
 			if (token == "-" && (prevToken.empty() || prevToken == "(" || prevToken == "," || IsOperator(prevToken))) {
 				output.push("0");
+				prevToken = "0";
 			}
 			if (token == ",") {
 				while (!ops.empty() && ops.top() != "(") { output.push(ops.top()); ops.pop(); }
 				prevToken = token;
 				continue;
 			}
-			if (token == "(") { ops.push(token); continue; }
+			if (token == "(") { ops.push(token); prevToken = token; continue; }
 			if (token == ")") {
 				while (!ops.empty() && ops.top() != "(") { output.push(ops.top()); ops.pop(); }
 				if (ops.empty()) throw std::runtime_error("No matching '('");
