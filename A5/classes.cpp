@@ -70,7 +70,7 @@ class Function {
 protected:
 	int parameters;
 public:
-	virtual int Evaluate(const std::vector<int>& args) {
+	virtual float Evaluate(const std::vector<float>& args) {
 		std::cout << "Non-specified function type";
 		return 0;
 	}
@@ -80,18 +80,18 @@ public:
 };
 class CustomFunction : public Function {
 	std::vector<std::string> body;
-	std::function<int(const std::vector<std::string>&)> evaluator;
+	std::function<float(const std::vector<std::string>&)> evaluator;
 public:
 	CustomFunction() {
 		parameters = 0;
 	}
 	CustomFunction(std::vector<std::string> bodyTokens, int p,
-		std::function<int(const std::vector<std::string>&)> eval) {
+		std::function<float(const std::vector<std::string>&)> eval) {
 		body = bodyTokens;
 		parameters = p;
 		evaluator = eval;
 	}
-	int Evaluate(const std::vector<int>& args) {
+	float Evaluate(const std::vector<float>& args) {
 		std::vector<std::string> substituted = body;
 		if (parameters != args.size()) {
 			std::cout << "Incorrect number of arguments!\n";
@@ -107,30 +107,30 @@ public:
 	}
 };
 class PredeclaredFunction : public Function {
-	std::function<int(const std::vector<int>& args)> value;
+	std::function<float(const std::vector<float>& args)> value;
 public:
 	PredeclaredFunction() : value(nullptr) {
 		parameters = 0;
 	}
-	PredeclaredFunction(std::function<int(const std::vector<int>& args)> f, int p) {
+	PredeclaredFunction(std::function<float(const std::vector<float>& args)> f, int p) {
 		value = f;
 		parameters = p;
 	}
-	int Evaluate(const std::vector<int>& args) {
+	float Evaluate(const std::vector<float>& args) {
 		return value(args);
 	}
 };
 class IntegrateFunction : public Function {
-	std::function<int(const std::vector<int>& args)> value;
+	std::function<float(const std::vector<float>& args)> value;
 public:
 	IntegrateFunction() : value(nullptr) {
 		parameters = 0;
 	}
-	IntegrateFunction(std::function<int(const std::vector<int>& args)> f, int p) {
+	IntegrateFunction(std::function<float(const std::vector<float>& args)> f, int p) {
 		value = f;
 		parameters = p;
 	}
-	int Evaluate(const std::vector<int>& args) {
+	float Evaluate(const std::vector<float>& args) {
 		return value(args);
 	}
 };
@@ -148,7 +148,7 @@ class Calculator {
 	std::map<std::string, PredeclaredFunction> operators;
 	std::map<std::string, Function> functions;
 
-	std::map<std::string, int> variables;
+	std::map<std::string, float> variables;
 
 	std::vector<std::string> bannedFunctionsList = {
 		"min", "max", "=",
@@ -176,21 +176,24 @@ class Calculator {
 		if (s == "integral") return 3;
 		return -1;
 	}
-	int resolveVar(const std::string& s) {
+	float resolveVar(const std::string& s) {
 		if (!variables.contains(s)) 
 			throw std::runtime_error("Undefined variable: " + s);
 		return variables[s];
 	}
 
-	/*long double Integrate(const std::string& f, const std::string& a, const std::string& b) {
-		int l = std::stoi(a);
-		int r = std::stoi(b);
-		long double result = 0.0;
-		for (float i = l; i + 0.01 <= r; i += 0.01) {
-			result += customFunctions[f].Evaluate({ i, i + 0.01 });
+	float Integrate(const std::string& f, const std::string& a, const std::string& b) {
+		float l = std::stof(a);
+		float r = std::stof(b);
+		float result = 0.0;
+		for (float i = l; i + 0.01f <= r; i += 0.01f) {
+			float yl = customFunctions[f].Evaluate({ i });
+			float yr = customFunctions[f].Evaluate({ i + 0.01f });
+			result += 0.01f * (yl + yr) / 2;
 		}
-	}*/
-	int callFn(const std::string& s, const std::vector<int>& args) {
+		return result;
+	}
+	float callFn(const std::string& s, const std::vector<float>& args) {
 		if (predeclaredFunctions.contains(s))
 			return predeclaredFunctions[s].Evaluate(args);
 		else if (customFunctions.contains(s))
@@ -258,26 +261,26 @@ public:
 		return output;
 	}
 
-	int Evaluate(std::queue<std::string> rpn) {
+	float Evaluate(std::queue<std::string> rpn) {
 		std::vector<std::string> expr;
 		while (!rpn.empty()) { expr.push_back(rpn.front()); rpn.pop(); }
 
 		int i = expr.size() - 1;
-		std::function<int()> resolve = [&]() -> int {
+		std::function<float()> resolve = [&]() -> float {
 			std::string token = expr[i--];
 			if (IsOperator(token)) {
-				int b = resolve();
-				int a = resolve();
+				float b = resolve();
+				float a = resolve();
 				return callFn(token, {a, b});
 			}
 				
 			int n = arityOf(token);
 			if (n >= 0) {
-				std::vector<int> args(n);
+				std::vector<float> args(n);
 				for (int k = n - 1; k >= 0; k--) args[k] = resolve();
 				return callFn(token, args);
 			}
-			if (IsNumber(token)) return std::stoi(token);
+			if (IsNumber(token)) return std::stof(token);
 			return resolveVar(token);
 			};
 		return resolve();
@@ -285,7 +288,7 @@ public:
 	////////////////////////////////
 
 
-	int Calculate(const std::vector<std::string>& v) {
+	float Calculate(const std::vector<std::string>& v) {
 		//for (auto s : v) std::cout << s; std::cout << "\n";
 
 		std::queue rpn = ToRPN(v);
@@ -313,7 +316,7 @@ public:
 			[this](const std::vector<std::string>& toks) { return Calculate(toks); });
 	}
 
-	int Process(const std::string& input) {
+	float Process(const std::string& input) {
 		std::vector<std::string> tokens = Parser::Parse(input);
 		//for (auto s : tokens) std::cout << s << "\n";
 		if (tokens[0] == "var") {
@@ -334,13 +337,13 @@ public:
 				customFunctions[tokens[1]] = CreateFunction(subset);
 			}
 		}
-		/*else if (tokens[0] == "integrate") {
+		else if (tokens[0] == "integrate") {
 			if (!customFunctions.contains(tokens[2])) {
 				std::cout << "Def " << tokens[2] << " doesn't exist!\n";
 				return 0;
 			}
-			Integrate(tokens[2], tokens[4], tokens[6]);
-		}*/
+			return Integrate(tokens[2], tokens[4], tokens[6]);
+		}
 		else {
 			return Calculate(tokens);
 		}

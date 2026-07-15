@@ -4,23 +4,23 @@
 #include <cmath>
 
 
-inline int max1(std::vector<int> p) {
+inline float max1(std::vector<float> p) {
 	return std::max(p[0], p[1]);
 }
-inline int min1(std::vector<int> p) {
+inline float min1(std::vector<float> p) {
 	return std::min(p[0], p[1]);
 }
 
-inline int plus1(std::vector<int> p) {
+inline float plus1(std::vector<float> p) {
 	return p[0] + p[1];
 }
-inline int minus1(std::vector<int> p) {
+inline float minus1(std::vector<float> p) {
 	return p[0] - p[1];
 }
-inline int multiply1(std::vector<int> p) {
+inline float multiply1(std::vector<float> p) {
 	return p[0] * p[1];
 } 
-inline int divide1(std::vector<int> p) {
+inline float divide1(std::vector<float> p) {
 	if (p[1] == 0) {
 		std::cout << "Zero division!\n";
 		return 0;
@@ -28,10 +28,10 @@ inline int divide1(std::vector<int> p) {
 	return p[0] / p[1];
 }
 
-inline int pow1(std::vector<int> p) {
-	return (int)std::pow(p[0], p[1]);
+inline float pow1(std::vector<float> p) {
+	return std::pow(p[0], p[1]);
 }
 
-inline int abs1(std::vector<int> p) {
+inline float abs1(std::vector<float> p) {
 	return std::abs(p[0]);
 }
